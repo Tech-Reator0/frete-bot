@@ -4,7 +4,6 @@ const cors = require('cors');
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Inicializa o aplicativo Express
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -18,7 +17,7 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT || 5432,
 });
 
 // Rota para listar fretes
@@ -51,7 +50,6 @@ app.post('/motoristas', async (req, res) => {
 app.post('/webhook', async (req, res) => {
   const intentName = req.body.queryResult.intent.displayName;
 
-  // Trata a intenção "Consultar Fretes"
   if (intentName === 'Consultar Fretes') {
     try {
       const result = await pool.query('SELECT * FROM fretes');
@@ -80,11 +78,11 @@ app.post('/webhook', async (req, res) => {
     }
   }
 
-  // Trata outras intenções (opcional)
+  // Outras intenções podem ser tratadas aqui
   return res.json({ fulfillmentText: 'Desculpe, não entendi sua solicitação.' });
 });
 
-// Inicia o servidor
+// Iniciar o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
 });
