@@ -20,40 +20,14 @@ const pool = new Pool({
   port: process.env.DB_PORT || 5432,
 });
 
-// Rota para listar fretes
-app.get('/fretes', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM fretes');
-    res.json(result.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Erro ao buscar fretes');
-  }
-});
-
-// Rota para cadastrar motoristas
-app.post('/motoristas', async (req, res) => {
-  const { nome, telefone, cnh, tipo_veiculo, regiao } = req.body;
-  try {
-    await pool.query(
-      'INSERT INTO motoristas (nome, telefone, cnh, tipo_veiculo, regiao) VALUES ($1, $2, $3, $4, $5)',
-      [nome, telefone, cnh, tipo_veiculo, regiao]
-    );
-    res.status(201).send('Motorista cadastrado com sucesso!');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Erro ao cadastrar motorista');
-  }
-});
-
-// Webhook para o Dialogflow
 app.post('/webhook', async (req, res) => {
   const intentName = req.body.queryResult.intent.displayName;
 
+  // Lógica para "Consultar Fretes"
   if (intentName === 'Consultar Fretes') {
     try {
       const result = await pool.query('SELECT * FROM fretes');
-      const freteList = result.rows.map((frete, index) => ({
+      const freteList = result.rows.map((frete) => ({
         origem: frete.origem,
         destino: frete.destino,
         valor: frete.valor,
@@ -78,9 +52,42 @@ app.post('/webhook', async (req, res) => {
     }
   }
 
-  // Outras intenções podem ser tratadas aqui
+  // Lógica para "Cadastro de Motoristas"
+  if (intentName === 'Cadastro de Motoristas') {
+    const parameters = req.body.queryResult.parameters;
+    const nome = parameters.nome || '';
+    const telefone = parameters.telefone || '';
+    const cnh = parameters.cnh || '';
+    const tipoVeiculo = parameters.tipo_veiculo || '';
+    const regiao = parameters.regiao || '';
+
+    // Verifica se todos os campos foram preenchidos
+    if (!nome || !telefone || !cnh || !tipoVeiculo || !regiao) {
+      return res.json({
+        fulfillmentText: 'Por favor, forneça todas as informações necessárias.',
+      });
+    }
+
+    try {
+      // Insere o motorista no banco de dados
+      await pool.query(
+        'INSERT INTO motoristas (nome, telefone, cnh, tipo_veiculo, regiao) VALUES ($1, $2, $3, $4, $5)',
+        [nome, telefone, cnh, tipoVeiculo, regiao]
+      );
+
+      return res.json({
+        fulfillmentText: `Motorista cadastrado com sucesso! Nome: ${nome}, Telefone: ${telefone}`,
+      });
+    } catch (err) {
+      console.error(err);
+      return res.json({ fulfillmentText: 'Erro ao cadastrar motorista.' });
+    }
+  }
+
+  // Resposta padrão para intenções não tratadas
   return res.json({ fulfillmentText: 'Desculpe, não entendi sua solicitação.' });
 });
+
 
 // Iniciar o servidor
 app.listen(port, () => {
