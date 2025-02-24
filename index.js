@@ -62,6 +62,27 @@ app.post('/motoristas', async (req, res) => {
   }
 });
 
+// Rota para cadastrar fretes
+app.post('/fretes', async (req, res) => {
+  const { origem, destino, valor, carga } = req.body;
+
+  // Validação básica
+  if (!origem || !destino || !valor || !carga) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  try {
+    await pool.query(
+      'INSERT INTO fretes (origem, destino, valor, carga) VALUES ($1, $2, $3, $4)',
+      [origem, destino, valor, carga]
+    );
+    res.status(201).json({ message: 'Frete cadastrado com sucesso!' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao cadastrar frete.' });
+  }
+});
+
 // Iniciar o servidor
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port}`);
