@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot de Fretes</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    input, select {
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    .frete-list {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Chatbot de Fretes</h1>
+
+    <!-- Consulta de Fretes -->
+    <h2>Consultar Fretes</h2>
+    <form id="consultaFretesForm">
+      <label for="regiao">Região:</label>
+      <input type="text" id="regiao" name="regiao" placeholder="Ex.: São Paulo">
+
+      <label for="carga">Tipo de Carga:</label>
+      <input type="text" id="carga" name="carga" placeholder="Ex.: Soja">
+
+      <button type="submit">Buscar Fretes</button>
+    </form>
+
+    <div id="freteList" class="frete-list" style="display: none;"></div>
+
+    <!-- Cadastro de Motoristas -->
+    <h2>Cadastrar Motorista</h2>
+    <form id="cadastroMotoristaForm">
+      <label for="nome">Nome:</label>
+      <input type="text" id="nome" name="nome" required>
+
+      <label for="telefone">Telefone:</label>
+      <input type="tel" id="telefone" name="telefone" required>
+
+      <label for="cnh">CNH:</label>
+      <input type="text" id="cnh" name="cnh" required>
+
+      <label for="tipoVeiculo">Tipo de Veículo:</label>
+      <select id="tipoVeiculo" name="tipo_veiculo" required>
+        <option value="">Selecione...</option>
+        <option value="Caminhão Baú">Caminhão Baú</option>
+        <option value="Caminhão Carreta">Caminhão Carreta</option>
+        <option value="Caminhão Truck">Caminhão Truck</option>
+        <option value="Caminhão Toco">Caminhão Toco</option>
+        <option value="Caminhão Cavalo Mecânico">Caminhão Cavalo Mecânico</option>
+        <option value="Caminhão Bitrem">Caminhão Bitrem</option>
+        <option value="Caminhão Rodotrem">Caminhão Rodotrem</option>
+        <option value="Caminhão Graneleiro">Caminhão Graneleiro</option>
+        <option value="Caminhão Frigorífico">Caminhão Frigorífico</option>
+        <option value="Caminhão Tanque">Caminhão Tanque</option>
+        <option value="Caminhão Munck">Caminhão Munck</option>
+        <option value="Caminhão Prancha">Caminhão Prancha</option>
+        <option value="Caminhão Sider">Caminhão Sider</option>
+        <option value="Caminhão Pipa">Caminhão Pipa</option>
+        <option value="Caminhão Caçamba">Caminhão Caçamba</option>
+      </select>
+
+      <label for="regiaoMotorista">Região:</label>
+      <input type="text" id="regiaoMotorista" name="regiao" required>
+
+      <button type="submit">Cadastrar</button>
+    </form>
+
+    <div id="resultadoCadastro" class="result" style="display: none;"></div>
+
+    <!-- Atualizar Dados do Motorista -->
+    <h2>Atualizar Dados do Motorista</h2>
+    <form id="atualizarDadosForm">
+      <label for="telefoneAtualizacao">Telefone:</label>
+      <input type="tel" id="telefoneAtualizacao" name="telefone" required>
+
+      <label for="novaRegiao">Nova Região:</label>
+      <input type="text" id="novaRegiao" name="regiao" required>
+
+      <button type="submit">Atualizar</button>
+    </form>
+
+    <div id="resultadoAtualizacao" class="result" style="display: none;"></div>
+
+    <!-- Habilitar Notificações -->
+    <h2>Habilitar Notificações</h2>
+    <form id="notificacoesForm">
+      <label for="telefoneNotificacao">Telefone:</label>
+      <input type="tel" id="telefoneNotificacao" name="telefone" required>
+
+      <label for="regiaoNotificacao">Região:</label>
+      <input type="text" id="regiaoNotificacao" name="regiao" required>
+
+      <button type="submit">Habilitar</button>
+    </form>
+
+    <div id="resultadoNotificacao" class="result" style="display: none;"></div>
+  </div>
+
+  <script>
+    // Consulta de Fretes
+    document.getElementById('consultaFretesForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const regiao = document.getElementById('regiao').value;
+      const carga = document.getElementById('carga').value;
+
+      try {
+        const response = await fetch('https://nome-do-seu-app.herokuapp.com/fretes', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        const freteListDiv = document.getElementById('freteList');
+        if (data.length === 0) {
+          freteListDiv.textContent = 'Nenhum frete encontrado com os critérios informados.';
+        } else {
+          freteListDiv.innerHTML = data
+            .map(
+              (frete, index) =>
+                `${index + 1}. Origem: ${frete.origem}, Destino: ${frete.destino}, Valor: ${
+                  frete.valor
+                }, Carga: ${frete.carga}`
+            )
+            .join('<br>');
+        }
+        freteListDiv.style.display = 'block';
+      } catch (error) {
+        console.error('Erro ao buscar fretes:', error);
+        document.getElementById('freteList').textContent = 'Erro ao buscar fretes. Tente novamente.';
+        document.getElementById('freteList').style.display = 'block';
+      }
+    });
+
+    // Cadastro de Motoristas
+    document.getElementById('cadastroMotoristaForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const nome = document.getElementById('nome').value;
+      const telefone = document.getElementById('telefone').value;
+      const cnh = document.getElementById('cnh').value;
+      const tipoVeiculo = document.getElementById('tipoVeiculo').value;
+      const regiao = document.getElementById('regiaoMotorista').value;
+
+      try {
+        const response = await fetch('https://nome-do-seu-app.herokuapp.com/motoristas', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            nome,
+            telefone,
+            cnh,
+            tipo_veiculo: tipoVeiculo,
+            regiao,
+          }),
+        });
+
+        const data = await response.json();
+
+        const resultadoDiv = document.getElementById('resultadoCadastro');
+        resultadoDiv.textContent = data.message || 'Erro ao cadastrar motorista.';
+        resultadoDiv.style.display = 'block';
+      } catch (error) {
+        console.error('Erro ao cadastrar motorista:', error);
+
+        const resultadoDiv = document.getElementById('resultadoCadastro');
+        resultadoDiv.textContent = 'Erro ao cadastrar motorista. Tente novamente.';
+        resultadoDiv.style.display = 'block';
+      }
+    });
+
+    // Atualizar Dados do Motorista
+    document.getElementById('atualizarDadosForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const telefone = document.getElementById('telefoneAtualizacao').value;
+      const regiao = document.getElementById('novaRegiao').value;
+
+      try {
+        const response = await fetch('https://nome-do-seu-app.herokuapp.com/motoristas', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            telefone,
+            regiao,
+          }),
+        });
+
+        const data = await response.json();
+
+        const resultadoDiv = document.getElementById('resultadoAtualizacao');
+        resultadoDiv.textContent = data.message || 'Erro ao atualizar dados.';
+        resultadoDiv.style.display = 'block';
+      } catch (error) {
+        console.error('Erro ao atualizar dados:', error);
+
+        const resultadoDiv = document.getElementById('resultadoAtualizacao');
+        resultadoDiv.textContent = 'Erro ao atualizar dados. Tente novamente.';
+        resultadoDiv.style.display = 'block';
+      }
+    });
+
+    // Habilitar Notificações
+    document.getElementById('notificacoesForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const telefone = document.getElementById('telefoneNotificacao').value;
+      const regiao = document.getElementById('regiaoNotificacao').value;
+
+      try {
+        const response = await fetch('https://nome-do-seu-app.herokuapp.com/notificacoes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            telefone,
+            regiao,
+          }),
+        });
+
+        const data = await response.json();
+
+        const resultadoDiv = document.getElementById('resultadoNotificacao');
+        resultadoDiv.textContent = data.message || 'Erro ao habilitar notificações.';
+        resultadoDiv.style.display = 'block';
+      } catch (error) {
+        console.error('Erro ao habilitar notificações:', error);
+
+        const resultadoDiv = document.getElementById('resultadoNotificacao');
+        resultadoDiv.textContent = 'Erro ao habilitar notificações. Tente novamente.';
+        resultadoDiv.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
